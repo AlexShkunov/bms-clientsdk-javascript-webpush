@@ -31,6 +31,7 @@ var _platform;
 var _websitePushIDSafari;
 var _getMethod;
 var _bluemixDeviceId;
+var overrideServerHost;
 
 function BMSPush() {
   /**
@@ -80,7 +81,7 @@ function BMSPush() {
           callback(getBMSPushResponse("Successfully initialized Push", 200, ""));
         });
         chrome.storage.local.set({
-          '_push_url': 'https://imfpush' + _appRegion + '/imfpush/v1/apps/' + _appId,
+          '_push_url': createUrlPath() + '/imfpush/v1/apps/' + _appId,
           '_pushClientSecret': _pushClientSecret
         });
 
@@ -269,6 +270,14 @@ function BMSPush() {
     }
 
     /*
+      set Dedicated, Syndocated, testZone or local service
+    */
+    this.setOverrideServerHost = function(params) {
+      overrideServerHost = params;
+    };
+
+
+    /*
     @Deprecated Use enableDebug or disableDebug
     */
     this.isDebugEnable = function(value) {
@@ -301,6 +310,14 @@ function BMSPush() {
       }
     }
 
+    function createUrlPath(){
+      if(validateInput(overrideServerHost)){
+        return overrideServerHost;
+      }else{
+        return "https://imfpush" + _appRegion;
+      }
+    }
+
     function registerPush(userId, callbackM) {
       if (validateInput(userId)) {
         printLog("userId based registration with userId " + userId);
@@ -313,7 +330,7 @@ function BMSPush() {
           let resultSafariPermission = window.safari.pushNotification.permission(_websitePushIDSafari);
           if (resultSafariPermission.permission === "default") {
             //User never asked before for permission
-            let base_url = "https://imfpush" + _appRegion + "/imfpush/v1/apps/" + _appId + "/settings/safariWebConf";
+            let base_url = createUrlPath() + "/imfpush/v1/apps/" + _appId + "/settings/safariWebConf";
             printLog("Request user for permission to receive notification for base URL " + base_url + " and websitepushID " + _websitePushIDSafari);
             window.safari.pushNotification.requestPermission(base_url,
               _websitePushIDSafari, {
@@ -857,7 +874,7 @@ function BMSPush() {
 
           function callPushRest(method, callback, action, data, headers) {
 
-            var url = 'https://imfpush' + _appRegion + '/imfpush/v1/apps/' + _appId;
+            var url = createUrlPath() + '/imfpush/v1/apps/' + _appId;
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function() {
               if (xmlHttp.readyState == 4) {
